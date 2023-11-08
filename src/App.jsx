@@ -13,7 +13,14 @@ const Task = ({ task, removeTask, editTask }) => {
   return (
     <div>
       {isEditing ? (
-        <p>editing</p>
+        <>
+          <input
+            type='text'
+            value={task.title}
+            onChange={event => editTask(task.id, event.target.value)}
+          />
+          <button onClick={toggleEdit}>Save</button>
+        </>
       ) : (
         <>
           <input
