@@ -1,65 +1,50 @@
-import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useReducer, useState } from 'react';
 import './App.css';
+import Task from './Task';
 
-const Task = ({ task, removeTask, editTask }) => {
-  const [done, setDone] = useState(task.done);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const toggleEdit = () => {
-    setIsEditing(!isEditing);
-  };
-
-  return (
-    <div>
-      {isEditing ? (
-        <>
-          <input
-            type='text'
-            value={task.title}
-            onChange={event => editTask(task.id, event.target.value)}
-          />
-          <button onClick={toggleEdit}>Save</button>
-        </>
-      ) : (
-        <>
-          <input
-            type='checkbox'
-            checked={done}
-            onChange={() => setDone(!done)}
-          />
-          <span
-            style={{
-              textDecoration: done ? 'line-through' : 'none',
-            }}
-          >
-            {task.title}
-          </span>
-        </>
-      )}
-
-      <button onClick={() => removeTask(task.id)}>X</button>
-      <button onClick={toggleEdit}>Edit</button>
-    </div>
-  );
-};
-
-Task.propTypes = {
-  task: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    title: PropTypes.string.isRequired,
-    done: PropTypes.bool.isRequired,
-  }).isRequired,
-  removeTask: PropTypes.func.isRequired,
-  editTask: PropTypes.func.isRequired,
-};
-
-function App() {
-  const [tasks, setTasks] = useState([
+const initialState = {
+  tasks: [
     { id: 1, title: 'Limpiar zapatos', done: false },
     { id: 2, title: 'Limpiar ventanas', done: false },
     { id: 3, title: 'Barrer la tienda', done: false },
-  ]);
+  ],
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'ADD_TASK':
+      return {
+        ...state,
+        tasks: [...state.tasks, action.payload],
+      };
+    case 'REMOVE_TASK':
+      return {
+        ...state,
+        tasks: state.tasks.filter(task => task.id !== action.payload),
+      };
+    case 'EDIT_TASK':
+      return {
+        ...state,
+        tasks: state.tasks.map(task => {
+          if (task.id === action.payload.id) {
+            return {
+              ...task,
+              title: action.payload.title,
+            };
+          }
+
+          return task;
+        }),
+      };
+    default:
+      return state;
+  }
+};
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  const { tasks } = state;
 
   const [task, setTask] = useState('');
 
@@ -80,27 +65,16 @@ function App() {
       done: false,
     };
 
-    setTasks([...tasks, newTask]);
+    dispatch({ type: 'ADD_TASK', payload: newTask });
     setTask('');
   };
 
   const removeTask = id => {
-    setTasks(tasks.filter(task => task.id !== id));
+    dispatch({ type: 'REMOVE_TASK', payload: id });
   };
 
   const editTask = (id, title) => {
-    setTasks(
-      tasks.map(task => {
-        if (task.id === id) {
-          return {
-            ...task,
-            title,
-          };
-        }
-
-        return task;
-      })
-    );
+    dispatch({ type: 'EDIT_TASK', payload: { id, title } });
   };
 
   return (
